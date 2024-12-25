@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+        }
+
+        header nav a {
+            color: white;
+            margin-right: 15px;
+            text-decoration: none;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        button {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        #posts {
+            margin-top: 20px;
+        }
+
+        .post {
+            background-color: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+        }
+
+        @media (max-width: 600px) {
+            header nav a {
+                display: block;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="javascript:void(0)" onclick="displayHome()">Home</a>
+            <a href="javascript:void(0)" onclick="displayProfile()">Profile</a>
+            <a href="javascript:void(0)" onclick="displayLogin()">Login</a>
+        </nav>
+    </header>
+
+    <main id="main-content">
+        <h1>Welcome to the Blog Platform</h1>
+        <div id="posts"></div> <!-- List of blog posts -->
+        <button onclick="displayCreatePost()">Create New Post</button>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Blog Platform</p>
+    </footer>
+
+    <script>
+        // Sample data for demonstration
+        const users = JSON.parse(localStorage.getItem('users')) || [];
+        const posts = JSON.parse(localStorage.getItem('posts')) || [];
+
+        // Display Homepage
+        function displayHome() {
+            const content = `
+                <h1>Welcome to the Blog Platform</h1>
+                <div id="posts"></div>
+                <button onclick="displayCreatePost()">Create New Post</button>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+            displayPosts();
+        }
+
+        // Display Profile Page
+        function displayProfile() {
+            const user = getLoggedInUser();
+            if (!user) {
+                alert("Please login first!");
+                displayLogin();
+                return;
+            }
+            const content = `
+                <h1>Your Profile</h1>
+                <div id="user-info"><h2>${user.username}</h2></div>
+                <div id="user-posts"></div>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+            displayUserPosts();
+        }
+
+        // Display Login Page
+        function displayLogin() {
+            const content = `
+                <h1>Login</h1>
+                <form onsubmit="loginUser(event)">
+                    <label for="login-username">Username:</label>
+                    <input type="text" id="login-username" required>
+                    <label for="login-password">Password:</label>
+                    <input type="password" id="login-password" required>
+                    <button type="submit">Login</button>
+                </form>
+                <p>Don't have an account? <a href="javascript:void(0)" onclick="displaySignup()">Sign Up</a></p>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+        }
+
+        // Display Signup Page
+        function displaySignup() {
+            const content = `
+                <h1>Sign Up</h1>
+                <form onsubmit="registerUser(event)">
+                    <label for="signup-username">Username:</label>
+                    <input type="text" id="signup-username" required>
+                    <label for="signup-password">Password:</label>
+                    <input type="password" id="signup-password" required>
+                    <button type="submit">Sign Up</button>
+                </form>
+                <p>Already have an account? <a href="javascript:void(0)" onclick="displayLogin()">Login</a></p>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+        }
+
+        // Register user
+        function registerUser(event) {
+            event.preventDefault();
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+            const user = { username, password };
+            users.push(user);
+            localStorage.setItem('users', JSON.stringify(users));
+            alert("Registration successful!");
+            displayLogin();
+        }
+
+        // Login user
+        function loginUser(event) {
+            event.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                localStorage.setItem('loggedInUser', JSON.stringify(user));
+                displayProfile();
+            } else {
+                alert('Invalid login');
+            }
+        }
+
+        // Get logged-in user
+        function getLoggedInUser() {
+            return JSON.parse(localStorage.getItem('loggedInUser'));
+        }
+
+        // Display posts on homepage
+        function displayPosts() {
+            const postsContainer = document.getElementById('posts');
+            postsContainer.innerHTML = '';
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.classList.add('post');
+                postElement.innerHTML = `
+                    <h2>${post.title}</h2>
+                    <p>${post.content}</p>
+                    <button onclick="deletePost(${post.id})">Delete</button>
+                    <button onclick="editPost(${post.id})">Edit</button>
+                    <button onclick="viewPost(${post.id})">View</button>
+                `;
+                postsContainer.appendChild(postElement);
+            });
+        }
+
+        // Delete post
+        function deletePost(id) {
+            const updatedPosts = posts.filter(post => post.id !== id);
+            localStorage.setItem('posts', JSON.stringify(updatedPosts));
+            displayPosts();
+        }
+
+        // Edit post
+        function editPost(id) {
+            const post = posts.find(post => post.id === id);
+            const content = `
+                <h1>Edit Post</h1>
+                <form onsubmit="updatePost(event, ${id})">
+                    <label for="edit-title">Title:</label>
+                    <input type="text" id="edit-title" value="${post.title}" required>
+                    <label for="edit-content">Content:</label>
+                    <textarea id="edit-content" required>${post.content}</textarea>
+                    <button type="submit">Update Post</button>
+                </form>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+        }
+
+        // Update post
+        function updatePost(event, id) {
+            event.preventDefault();
+            const title = document.getElementById('edit-title').value;
+            const content = document.getElementById('edit-content').value;
+            const updatedPosts = posts.map(post => 
+                post.id === id ? { ...post, title, content } : post
+            );
+            localStorage.setItem('posts', JSON.stringify(updatedPosts));
+            displayPosts();
+        }
+
+        // Create post
+        function displayCreatePost() {
+            const content = `
+                <h1>Create New Post</h1>
+                <form onsubmit="createPost(event)">
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" required>
+                    <label for="content">Content:</label>
+                    <textarea id="content" required></textarea>
+                    <button type="submit">Create Post</button>
+                </form>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+        }
+
+        function createPost(event) {
+            event.preventDefault();
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const post = { title, content, id: Date.now(), user: getLoggedInUser() };
+            posts.push(post);
+            localStorage.setItem('posts', JSON.stringify(posts));
+            displayPosts();
+        }
+
+        // Display user posts
+        function displayUserPosts() {
+            const user = getLoggedInUser();
+            const userPosts = posts.filter(post => post.user.username === user.username);
+            const postsContainer = document.getElementById('user-posts');
+            userPosts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.classList.add('post');
+                postElement.innerHTML = `
+                    <h2>${post.title}</h2>
+                    <p>${post.content}</p>
+                    <button onclick="deletePost(${post.id})">Delete</button>
+                    <button onclick="editPost(${post.id})">Edit</button>
+                `;
+                postsContainer.appendChild(postElement);
+            });
+        }
+
+        // Initialize the platform
+        displayHome();
+    </script>
+</body>
+</html>
